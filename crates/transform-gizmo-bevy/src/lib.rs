@@ -29,6 +29,7 @@
 //! You can either set it up with [`App::insert_resource`] when creating your App, or at any point in a system with [`ResMut<GizmoOptions>`].
 
 use bevy_app::prelude::*;
+use bevy_reflect::Reflect;
 use bevy_asset::{AssetApp, Assets};
 use bevy_ecs::prelude::*;
 use bevy_input::prelude::*;
