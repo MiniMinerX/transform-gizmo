@@ -661,7 +661,7 @@ pub struct GizmoInteraction {
 }
 
 /// Result of a gizmo transformation
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Reflect)]
 pub enum GizmoResult {
     Rotation {
         /// The rotation axis,
