@@ -211,6 +211,7 @@ pub struct GizmoTarget {
 
     /// This gets replaced with the result of the most recent
     /// gizmo interaction that affected this entity.
+    #[reflect(ignore)]
     pub(crate) latest_result: Option<GizmoResult>,
 }
 
