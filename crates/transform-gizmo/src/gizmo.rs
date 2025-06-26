@@ -19,6 +19,8 @@ use crate::subgizmo::{
     TranslationSubGizmo, common::TransformKind,
 };
 
+use bevy_reflect::Reflect;
+
 /// A 3D transformation gizmo.
 #[derive(Clone, Debug, Default)]
 pub struct Gizmo {
