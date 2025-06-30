@@ -36,6 +36,7 @@ use bevy_math::{DQuat, DVec3, Vec2};
 use bevy_picking::hover::HoverMap;
 use bevy_platform::collections::HashMap;
 use bevy_render::prelude::*;
+use bevy_reflect::Reflect;
 use bevy_transform::prelude::*;
 use bevy_window::{PrimaryWindow, Window};
 use mouse_interact::MouseGizmoInteractionPlugin;
