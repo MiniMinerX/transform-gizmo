@@ -384,7 +384,7 @@ pub struct GizmoDragging;
 fn update_gizmos(
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_gizmo_camera: Query<(&Camera, &GlobalTransform), With<GizmoCamera>>,
-    mut q_targets: Query<(Entity, &mut Transform, &mut GizmoTarget), Without<GizmoCamera>>,
+    mut q_targets: Query<(Entity, &mut GlobalTransform, &mut GizmoTarget), Without<GizmoCamera>>,
     mut drag_started: EventReader<GizmoDragStarted>,
     mut dragging: EventReader<GizmoDragging>,
     gizmo_options: Res<GizmoOptions>,
