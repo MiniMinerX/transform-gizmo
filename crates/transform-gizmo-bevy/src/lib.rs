@@ -199,7 +199,8 @@ impl Default for GizmoHotkeys {
 /// If target grouping is enabled in [`GizmoOptions`],
 /// a single gizmo is used for all targets. Otherwise
 /// a separate gizmo is used for each target entity.
-#[derive(Component, Copy, Clone, Debug, Default)]
+#[derive(Component, Copy, Clone, Debug, Default, Reflect)]
+#[reflect(Component)]
 pub struct GizmoTarget {
     /// Whether any part of the gizmo is currently focused.
     pub(crate) is_focused: bool,
@@ -231,7 +232,8 @@ impl GizmoTarget {
 }
 
 /// Marker used to specify which camera to use for gizmos.
-#[derive(Component)]
+#[derive(Component, Reflect, Default, Clone)]
+#[reflect(Component)]
 pub struct GizmoCamera;
 
 #[derive(Resource, Default)]
