@@ -384,7 +384,7 @@ pub struct GizmoDragging;
 fn update_gizmos(
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_gizmo_camera: Query<(&Camera, &GlobalTransform), With<GizmoCamera>>,
-    mut q_targets: Query<(Entity, &mut GlobalTransform, &mut GizmoTarget), Without<GizmoCamera>>,
+    mut q_targets: Query<(Entity, &mut Transform, &GlobalTransform, &mut GizmoTarget), Without<GizmoCamera>>,
     mut drag_started: EventReader<GizmoDragStarted>,
     mut dragging: EventReader<GizmoDragging>,
     gizmo_options: Res<GizmoOptions>,
@@ -495,7 +495,7 @@ fn update_gizmos(
     let mut target_entities: Vec<Entity> = vec![];
     let mut target_transforms: Vec<Transform> = vec![];
 
-    for (entity, mut target_transform, mut gizmo_target) in &mut q_targets {
+    for (entity, mut target_transform, gizmo_global_transform, mut gizmo_target) in &mut q_targets {
         target_entities.push(entity);
         target_transforms.push(*target_transform);
 
