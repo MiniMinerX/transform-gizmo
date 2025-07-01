@@ -13,7 +13,7 @@ use bevy_image::BevyDefault as _;
 use bevy_pbr::{MeshPipeline, MeshPipelineKey, SetMeshViewBindGroup};
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_reflect::{Reflect, TypePath};
-use bevy_render::extract_component::ExtractComponent;
+use bevy_render::extract_component::{ExtractComponent, ExtractComponentPlugin};
 use bevy_render::mesh::PrimitiveTopology;
 use bevy_render::prelude::*;
 use bevy_render::render_asset::{
@@ -50,7 +50,8 @@ impl Plugin for TransformGizmoRenderPlugin {
 
         app.register_type::<DrawDataHandles>()
             .init_resource::<DrawDataHandles>()
-            .add_plugins(RenderAssetPlugin::<GizmoBuffers>::default());
+            .add_plugins(RenderAssetPlugin::<GizmoBuffers>::default())
+            .add_plugins(ExtractComponentPlugin::<GizmoCamera>::default());
 
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
@@ -321,7 +322,7 @@ fn queue_transform_gizmos(
     pipeline: Res<TransformGizmoPipeline>,
     mut pipelines: ResMut<SpecializedRenderPipelines<TransformGizmoPipeline>>,
     pipeline_cache: Res<PipelineCache>,
-     gizmo_camera_q: Query<(Entity, Option<&Msaa>), With<GizmoCamera>>,
+    msaa_q: Query<Option<&Msaa>, With<GizmoCamera>>,
     transform_gizmos: Query<(Entity, &GizmoDrawDataHandle)>,
     transform_gizmo_assets: Res<RenderAssets<GizmoBuffers>>,
     mut views: Query<(
@@ -335,16 +336,11 @@ fn queue_transform_gizmos(
             Has<MotionVectorPrepass>,
             Has<DeferredPrepass>,
         ),
-    )>,
+    ), With<GizmoCamera>>,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
 ) {
-    // Get the single GizmoCamera and its MSAA settings.
-    let Ok((gizmo_camera_entity, camera_msaa)) = gizmo_camera_q.single() else {
-        // If there's no GizmoCamera, don't render any gizmos.
-        return;
-    };
-
     let draw_function = draw_functions.read().get_id::<DrawGizmo>().unwrap();
+    let camera_msaa = msaa_q.single().ok().flatten();
     for (
         view_entity,
         view,
@@ -353,10 +349,6 @@ fn queue_transform_gizmos(
         (normal_prepass, depth_prepass, motion_vector_prepass, deferred_prepass),
     ) in &mut views
     {
-        if view_entity != gizmo_camera_entity {
-            continue;
-        }
-
         let Some(transparent_phase) = transparent_render_phases.get_mut(&view.retained_view_entity)
         else {
             continue;
