@@ -497,7 +497,12 @@ fn update_gizmos(
 
     for (entity, mut target_transform, gizmo_global_transform, mut gizmo_target) in &mut q_targets {
         target_entities.push(entity);
-        target_transforms.push(*target_transform);
+        target_transforms.push(Transform {
+            translation: gizmo_global_transform.translation(),
+            rotation: gizmo_global_transform.rotation(),
+            scale: gizmo_global_transform.scale(),
+        });
+
 
         if gizmo_options.group_targets {
             gizmo_storage
