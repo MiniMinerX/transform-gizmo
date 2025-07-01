@@ -528,9 +528,9 @@ fn update_gizmos(
         let gizmo_result = gizmo.update(
             gizmo_interaction,
             &[math::Transform {
-                translation: target_transform.translation().as_dvec3().into(),
-                rotation: target_transform.rotation().as_dquat().into(),
-                scale: target_transform.scale().as_dvec3().into(),
+                translation: target_transform.translation.as_dvec3().into(),
+                rotation: target_transform.rotation.as_dquat().into(),
+                scale: target_transform.scale.as_dvec3().into(),
             }],
         );
 
