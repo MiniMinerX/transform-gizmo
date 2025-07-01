@@ -482,7 +482,11 @@ fn update_gizmos(
     #[cfg(not(feature = "gizmo_picking_backend"))]
     let any_gizmo_hovered = true;
 
-    let hovered = any_gizmo_hovered || gizmo_options.mode_override.is_some();
+    // Check if there are any gizmo targets in the scene.
+    let has_targets = q_targets.iter().next().is_some();
+
+    // The gizmo is considered hovered if it's precisely picked OR if any target exists at all.
+    let hovered = any_gizmo_hovered || has_targets || gizmo_options.mode_override.is_some();
 
     // 2. CREATE THE GIZMO INTERACTION STRUCT ONCE
     // This interaction data will be used for ALL gizmos this frame.

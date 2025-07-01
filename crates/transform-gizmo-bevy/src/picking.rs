@@ -44,5 +44,7 @@ fn update_hits(
             .collect::<Vec<_>>();
 
         output.write(PointerHits::new(*pointer_id, hits, 0.0));
+
+        println!("pointer hit");
     }
 }
