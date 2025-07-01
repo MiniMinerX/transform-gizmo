@@ -475,32 +475,13 @@ fn update_gizmos(
         pixels_per_point: scale_factor,
     };
 
-    #[cfg(feature = "gizmo_picking_backend")]
-    // The gizmo picking backend sends hits to the entity the gizmo is targeting.
-    // We check for those entities in the hover map to.
-    let any_gizmo_hovered = q_targets
-        .iter()
-        .any(|(entity, ..)| hover_map.iter().any(|(_, map)| map.contains_key(&entity)));
-    #[cfg(not(feature = "gizmo_picking_backend"))]
-    let any_gizmo_hovered = true;
-
-    let hovered = any_gizmo_hovered || gizmo_options.mode_override.is_some();
-
-    let gizmo_interaction = GizmoInteraction {
-        cursor_pos: (cursor_pos.x, cursor_pos.y),
-        hovered,
-        drag_started: drag_started.read().len() > 0,
-        dragging: dragging.read().len() > 0,
-    };
-
     let mut target_entities: Vec<Entity> = vec![];
-    let mut target_transforms: Vec<transform_gizmo::math::Transform> = vec![];
+    let mut target_global_transforms: Vec<transform_gizmo::math::Transform> = vec![];
 
-    // MODIFICATION 3: Iterate through targets and store their global transform for the gizmo library.
-    // The change to your code was correct here. We need the global transform for gizmo calculations.
+    // Collect all target entities and their global transforms for the gizmo library.
     for (entity, _transform, global_transform, _gizmo_target, _parent) in &q_targets {
         target_entities.push(entity);
-        target_transforms.push(transform_gizmo::math::Transform {
+        target_global_transforms.push(transform_gizmo::math::Transform {
             translation: global_transform.translation().as_dvec3().into(),
             rotation: global_transform.rotation().as_dquat().into(),
             scale: global_transform.scale().as_dvec3().into(),
@@ -509,12 +490,25 @@ fn update_gizmos(
 
     // --- Handling for Individual Gizmos ---
     if !gizmo_options.group_targets {
-        // Create a mutable iterator to apply changes
         let mut targets_iter = q_targets.iter_mut();
         for (i, (entity, mut target_transform, _global_transform, mut gizmo_target, parent_opt)) in targets_iter.enumerate() {
+            let Some(gizmo_input_transform) = target_global_transforms.get(i) else { continue; };
 
-            // Get the single transform for the current entity
-            let Some(gizmo_input_transform) = target_transforms.get(i) else { continue; };
+            // MODIFICATION: Check for hover on this specific entity
+            #[cfg(feature = "gizmo_picking_backend")]
+            let is_this_entity_hovered = hover_map.iter().any(|(_, map)| map.contains_key(&entity));
+            #[cfg(not(feature = "gizmo_picking_backend"))]
+            let is_this_entity_hovered = true; // Assume hovered if not using picking backend
+
+            let hovered = is_this_entity_hovered || gizmo_options.mode_override.is_some();
+
+            // MODIFICATION: Create a unique interaction object for each gizmo
+            let gizmo_interaction = GizmoInteraction {
+                cursor_pos: (cursor_pos.x, cursor_pos.y),
+                hovered,
+                drag_started: !drag_started.is_empty(),
+                dragging: !dragging.is_empty(),
+            };
 
             let gizmo_uuid = *gizmo_storage.entity_gizmo_map.entry(entity).or_insert_with(Uuid::new_v4);
             let gizmo = gizmo_storage.gizmos.entry(gizmo_uuid).or_default();
@@ -525,7 +519,6 @@ fn update_gizmos(
             gizmo_target.is_active = gizmo_result.is_some();
             gizmo_target.is_focused = gizmo.is_focused();
 
-            // MODIFICATION 4: Apply result correctly for individual gizmos
             if let Some((_, updated_targets)) = &gizmo_result {
                 if let Some(result_transform) = updated_targets.first() {
                     let new_global_transform = GlobalTransform::from(Transform {
@@ -534,13 +527,11 @@ fn update_gizmos(
                         scale: DVec3::from(result_transform.scale).as_vec3(),
                     });
 
-                    // Convert back to local space if there is a parent
                     if let Some(parent) = parent_opt {
                         if let Ok(parent_global_transform) = q_parent_transforms.get(parent.get()) {
                             *target_transform = new_global_transform.reparented_to(parent_global_transform);
                         }
                     } else {
-                        // No parent, global is local
                         *target_transform = new_global_transform.into();
                     }
                 }
@@ -550,23 +541,35 @@ fn update_gizmos(
     }
 
     // --- Handling for Grouped Gizmo ---
-    if gizmo_options.group_targets && !target_transforms.is_empty() {
+    if gizmo_options.group_targets && !target_global_transforms.is_empty() {
+        // For grouped gizmos, a single hover on any target is sufficient.
+        #[cfg(feature = "gizmo_picking_backend")]
+        let any_gizmo_hovered = q_targets.iter().any(|(entity, ..)| hover_map.iter().any(|(_, map)| map.contains_key(&entity)));
+        #[cfg(not(feature = "gizmo_picking_backend"))]
+        let any_gizmo_hovered = true;
+
+        let hovered = any_gizmo_hovered || gizmo_options.mode_override.is_some();
+
+        let gizmo_interaction = GizmoInteraction {
+            cursor_pos: (cursor_pos.x, cursor_pos.y),
+            hovered,
+            drag_started: !drag_started.is_empty(),
+            dragging: !dragging.is_empty(),
+        };
+
         let gizmo = gizmo_storage.gizmos.entry(GIZMO_GROUP_UUID).or_default();
         gizmo.update_config(gizmo_config);
 
-        let gizmo_result = gizmo.update(gizmo_interaction, &target_transforms);
+        let gizmo_result = gizmo.update(gizmo_interaction, &target_global_transforms);
         let is_focused = gizmo.is_focused();
 
-        // Create a mutable iterator to step through entities while matching with results
         let mut targets_iter = q_targets.iter_mut();
         for i in 0..target_entities.len() {
-             // We can safely unwrap here because we know the iterator has `target_entities.len()` items.
             let (_entity, mut target_transform, _g_global_transform, mut gizmo_target, parent_opt) = targets_iter.next().unwrap();
             
             gizmo_target.is_active = gizmo_result.is_some();
             gizmo_target.is_focused = is_focused;
 
-            // MODIFICATION 5: Apply result correctly for grouped gizmos
             if let Some((_, updated_targets)) = &gizmo_result {
                 if let Some(result_transform) = updated_targets.get(i) {
                     let new_global_transform = GlobalTransform::from(Transform {
@@ -575,13 +578,11 @@ fn update_gizmos(
                         scale: DVec3::from(result_transform.scale).as_vec3(),
                     });
 
-                    // Convert back to local space if there is a parent
                     if let Some(parent) = parent_opt {
                         if let Ok(parent_global_transform) = q_parent_transforms.get(parent.get()) {
                             *target_transform = new_global_transform.reparented_to(parent_global_transform);
                         }
                     } else {
-                        // No parent, global is local
                         *target_transform = new_global_transform.into();
                     }
                 }
