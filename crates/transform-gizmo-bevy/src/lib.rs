@@ -475,6 +475,24 @@ fn update_gizmos(
         pixels_per_point: scale_factor,
     };
 
+    // 1. CALCULATE A GLOBAL HOVER STATE
+    // Check if any entity targeted by a gizmo is being hovered by the picking backend.
+    #[cfg(feature = "gizmo_picking_backend")]
+    let any_gizmo_hovered = q_targets.iter().any(|(entity, ..)| hover_map.iter().any(|(_, map)| map.contains_key(&entity)));
+    #[cfg(not(feature = "gizmo_picking_backend"))]
+    let any_gizmo_hovered = true;
+
+    let hovered = any_gizmo_hovered || gizmo_options.mode_override.is_some();
+
+    // 2. CREATE THE GIZMO INTERACTION STRUCT ONCE
+    // This interaction data will be used for ALL gizmos this frame.
+    let gizmo_interaction = GizmoInteraction {
+        cursor_pos: (cursor_pos.x, cursor_pos.y),
+        hovered,
+        drag_started: !drag_started.is_empty(),
+        dragging: !dragging.is_empty(),
+    };
+
     let mut target_entities: Vec<Entity> = vec![];
     let mut target_global_transforms: Vec<transform_gizmo::math::Transform> = vec![];
 
@@ -490,25 +508,9 @@ fn update_gizmos(
 
     // --- Handling for Individual Gizmos ---
     if !gizmo_options.group_targets {
-        let mut targets_iter = q_targets.iter_mut();
+        let targets_iter = q_targets.iter_mut();
         for (i, (entity, mut target_transform, _global_transform, mut gizmo_target, parent_opt)) in targets_iter.enumerate() {
             let Some(gizmo_input_transform) = target_global_transforms.get(i) else { continue; };
-
-            // MODIFICATION: Check for hover on this specific entity
-            #[cfg(feature = "gizmo_picking_backend")]
-            let is_this_entity_hovered = hover_map.iter().any(|(_, map)| map.contains_key(&entity));
-            #[cfg(not(feature = "gizmo_picking_backend"))]
-            let is_this_entity_hovered = true; // Assume hovered if not using picking backend
-
-            let hovered = is_this_entity_hovered || gizmo_options.mode_override.is_some();
-
-            // MODIFICATION: Create a unique interaction object for each gizmo
-            let gizmo_interaction = GizmoInteraction {
-                cursor_pos: (cursor_pos.x, cursor_pos.y),
-                hovered,
-                drag_started: !drag_started.is_empty(),
-                dragging: !dragging.is_empty(),
-            };
 
             let gizmo_uuid = *gizmo_storage.entity_gizmo_map.entry(entity).or_insert_with(Uuid::new_v4);
             let gizmo = gizmo_storage.gizmos.entry(gizmo_uuid).or_default();
@@ -542,20 +544,6 @@ fn update_gizmos(
 
     // --- Handling for Grouped Gizmo ---
     if gizmo_options.group_targets && !target_global_transforms.is_empty() {
-        // For grouped gizmos, a single hover on any target is sufficient.
-        #[cfg(feature = "gizmo_picking_backend")]
-        let any_gizmo_hovered = q_targets.iter().any(|(entity, ..)| hover_map.iter().any(|(_, map)| map.contains_key(&entity)));
-        #[cfg(not(feature = "gizmo_picking_backend"))]
-        let any_gizmo_hovered = true;
-
-        let hovered = any_gizmo_hovered || gizmo_options.mode_override.is_some();
-
-        let gizmo_interaction = GizmoInteraction {
-            cursor_pos: (cursor_pos.x, cursor_pos.y),
-            hovered,
-            drag_started: !drag_started.is_empty(),
-            dragging: !dragging.is_empty(),
-        };
 
         let gizmo = gizmo_storage.gizmos.entry(GIZMO_GROUP_UUID).or_default();
         gizmo.update_config(gizmo_config);
