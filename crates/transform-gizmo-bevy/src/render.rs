@@ -321,7 +321,7 @@ fn queue_transform_gizmos(
     pipeline: Res<TransformGizmoPipeline>,
     mut pipelines: ResMut<SpecializedRenderPipelines<TransformGizmoPipeline>>,
     pipeline_cache: Res<PipelineCache>,
-    msaa_q: Query<Option<&Msaa>, With<GizmoCamera>>,
+     gizmo_camera_q: Query<(Entity, Option<&Msaa>), With<GizmoCamera>>,
     transform_gizmos: Query<(Entity, &GizmoDrawDataHandle)>,
     transform_gizmo_assets: Res<RenderAssets<GizmoBuffers>>,
     mut views: Query<(
@@ -338,8 +338,13 @@ fn queue_transform_gizmos(
     )>,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
 ) {
+    // Get the single GizmoCamera and its MSAA settings.
+    let Ok((gizmo_camera_entity, camera_msaa)) = gizmo_camera_q.single() else {
+        // If there's no GizmoCamera, don't render any gizmos.
+        return;
+    };
+
     let draw_function = draw_functions.read().get_id::<DrawGizmo>().unwrap();
-    let camera_msaa = msaa_q.single().ok().flatten();
     for (
         view_entity,
         view,
@@ -348,6 +353,10 @@ fn queue_transform_gizmos(
         (normal_prepass, depth_prepass, motion_vector_prepass, deferred_prepass),
     ) in &mut views
     {
+        if view_entity != gizmo_camera_entity {
+            continue;
+        }
+
         let Some(transparent_phase) = transparent_render_phases.get_mut(&view.retained_view_entity)
         else {
             continue;
