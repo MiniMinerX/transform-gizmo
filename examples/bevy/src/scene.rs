@@ -38,8 +38,14 @@ fn setup_scene(
 
     let colors: [Color; 3] = [RED.into(), LIME.into(), BLUE.into()];
 
+    let cube_parent = commands.spawn((
+        Mesh3d(cube_mesh.clone()),
+        MeshMaterial3d(materials.add(Color::from(LIME))),
+        Transform::from_translation(Vec3::new(5.0, 5.0, 5.0)),
+    )).id();
+
     for i in 0..cube_count {
-        commands.spawn((
+        let cube_child = commands.spawn((
             Mesh3d(cube_mesh.clone()),
             MeshMaterial3d(materials.add(colors[i as usize % colors.len()])),
             Transform::from_xyz(-(cube_count / 2) as f32 * 1.5 + (i as f32 * 1.5), 0.0, 0.0),
@@ -53,8 +59,22 @@ fn setup_scene(
             OutlineStencil::default(),
             OutlineMode::default(),
             ComputedOutline::default(),
-        ));
+        )).id();
+
+        commands.entity(cube_parent).add_child(cube_child);
     }
+
+    let sphere_mesh = meshes.add(Sphere {
+        radius: 0.5,
+        ..default()
+    });
+
+    let sphere_origin = commands.spawn((
+        Mesh3d(sphere_mesh),
+        MeshMaterial3d(materials.add(Color::from(RED))),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    )).id();
+
     commands.spawn((
         PointLight {
             shadows_enabled: true,
