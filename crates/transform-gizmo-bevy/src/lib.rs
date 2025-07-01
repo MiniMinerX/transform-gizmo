@@ -384,7 +384,8 @@ pub struct GizmoDragging;
 fn update_gizmos(
     q_window: Query<&Window, With<PrimaryWindow>>,
     q_gizmo_camera: Query<(&Camera, &GlobalTransform), With<GizmoCamera>>,
-    mut q_targets: Query<(Entity, &mut Transform, &GlobalTransform, &mut GizmoTarget), Without<GizmoCamera>>,
+    mut q_targets: Query<(Entity, &mut Transform, &GlobalTransform, &mut GizmoTarget, Option<&ChildOf>), Without<GizmoCamera>>,
+    q_parent_transforms: Query<&GlobalTransform, With<Children>>,
     mut drag_started: EventReader<GizmoDragStarted>,
     mut dragging: EventReader<GizmoDragging>,
     gizmo_options: Res<GizmoOptions>,
@@ -493,100 +494,98 @@ fn update_gizmos(
     };
 
     let mut target_entities: Vec<Entity> = vec![];
-    let mut target_transforms: Vec<Transform> = vec![];
+    let mut target_transforms: Vec<transform_gizmo::math::Transform> = vec![];
 
-    for (entity, mut target_transform, gizmo_global_transform, mut gizmo_target) in &mut q_targets {
+    // MODIFICATION 3: Iterate through targets and store their global transform for the gizmo library.
+    // The change to your code was correct here. We need the global transform for gizmo calculations.
+    for (entity, _transform, global_transform, _gizmo_target, _parent) in &q_targets {
         target_entities.push(entity);
-        target_transforms.push(Transform {
-            translation: gizmo_global_transform.translation(),
-            rotation: gizmo_global_transform.rotation(),
-            scale: gizmo_global_transform.scale(),
+        target_transforms.push(transform_gizmo::math::Transform {
+            translation: global_transform.translation().as_dvec3().into(),
+            rotation: global_transform.rotation().as_dquat().into(),
+            scale: global_transform.scale().as_dvec3().into(),
         });
-
-
-        if gizmo_options.group_targets {
-            gizmo_storage
-                .entity_gizmo_map
-                .insert(entity, GIZMO_GROUP_UUID);
-            continue;
-        }
-
-        let mut gizmo_uuid = *gizmo_storage
-            .entity_gizmo_map
-            .entry(entity)
-            .or_insert_with(Uuid::new_v4);
-
-        // Group gizmo was used previously
-        if gizmo_uuid == GIZMO_GROUP_UUID {
-            gizmo_uuid = Uuid::new_v4();
-            gizmo_storage.entity_gizmo_map.insert(entity, gizmo_uuid);
-        }
-
-        let gizmo = gizmo_storage.gizmos.entry(gizmo_uuid).or_default();
-        gizmo.update_config(gizmo_config);
-
-        let gizmo_result = gizmo.update(
-            gizmo_interaction,
-            &[math::Transform {
-                translation: target_transform.translation.as_dvec3().into(),
-                rotation: target_transform.rotation.as_dquat().into(),
-                scale: target_transform.scale.as_dvec3().into(),
-            }],
-        );
-
-        let is_focused = gizmo.is_focused();
-
-        gizmo_target.is_active = gizmo_result.is_some();
-        gizmo_target.is_focused = is_focused;
-
-        if let Some((_, updated_targets)) = &gizmo_result {
-            let Some(result_transform) = updated_targets.first() else {
-                bevy_log::warn!("No transform found in GizmoResult!");
-                continue;
-            };
-
-            target_transform.translation = DVec3::from(result_transform.translation).as_vec3();
-            target_transform.rotation = DQuat::from(result_transform.rotation).as_quat();
-            target_transform.scale = DVec3::from(result_transform.scale).as_vec3();
-        }
-
-        gizmo_target.latest_result = gizmo_result.map(|(result, _)| result);
     }
 
-    if gizmo_options.group_targets {
+    // --- Handling for Individual Gizmos ---
+    if !gizmo_options.group_targets {
+        // Create a mutable iterator to apply changes
+        let mut targets_iter = q_targets.iter_mut();
+        for (i, (entity, mut target_transform, _global_transform, mut gizmo_target, parent_opt)) in targets_iter.enumerate() {
+
+            // Get the single transform for the current entity
+            let Some(gizmo_input_transform) = target_transforms.get(i) else { continue; };
+
+            let gizmo_uuid = *gizmo_storage.entity_gizmo_map.entry(entity).or_insert_with(Uuid::new_v4);
+            let gizmo = gizmo_storage.gizmos.entry(gizmo_uuid).or_default();
+            gizmo.update_config(gizmo_config);
+
+            let gizmo_result = gizmo.update(gizmo_interaction, &[*gizmo_input_transform]);
+
+            gizmo_target.is_active = gizmo_result.is_some();
+            gizmo_target.is_focused = gizmo.is_focused();
+
+            // MODIFICATION 4: Apply result correctly for individual gizmos
+            if let Some((_, updated_targets)) = &gizmo_result {
+                if let Some(result_transform) = updated_targets.first() {
+                    let new_global_transform = GlobalTransform::from(Transform {
+                        translation: DVec3::from(result_transform.translation).as_vec3(),
+                        rotation: DQuat::from(result_transform.rotation).as_quat(),
+                        scale: DVec3::from(result_transform.scale).as_vec3(),
+                    });
+
+                    // Convert back to local space if there is a parent
+                    if let Some(parent) = parent_opt {
+                        if let Ok(parent_global_transform) = q_parent_transforms.get(parent.get()) {
+                            *target_transform = new_global_transform.reparented_to(parent_global_transform);
+                        }
+                    } else {
+                        // No parent, global is local
+                        *target_transform = new_global_transform.into();
+                    }
+                }
+            }
+            gizmo_target.latest_result = gizmo_result.map(|(result, _)| result);
+        }
+    }
+
+    // --- Handling for Grouped Gizmo ---
+    if gizmo_options.group_targets && !target_transforms.is_empty() {
         let gizmo = gizmo_storage.gizmos.entry(GIZMO_GROUP_UUID).or_default();
         gizmo.update_config(gizmo_config);
 
-        let gizmo_result = gizmo.update(
-            gizmo_interaction,
-            target_transforms
-                .iter()
-                .map(|transform| transform_gizmo::math::Transform {
-                    translation: transform.translation.as_dvec3().into(),
-                    rotation: transform.rotation.as_dquat().into(),
-                    scale: transform.scale.as_dvec3().into(),
-                })
-                .collect::<Vec<_>>()
-                .as_slice(),
-        );
-
+        let gizmo_result = gizmo.update(gizmo_interaction, &target_transforms);
         let is_focused = gizmo.is_focused();
 
-        for (i, (_, mut target_transform, g_global_transform, mut gizmo_target)) in q_targets.iter_mut().enumerate() {
+        // Create a mutable iterator to step through entities while matching with results
+        let mut targets_iter = q_targets.iter_mut();
+        for i in 0..target_entities.len() {
+             // We can safely unwrap here because we know the iterator has `target_entities.len()` items.
+            let (_entity, mut target_transform, _g_global_transform, mut gizmo_target, parent_opt) = targets_iter.next().unwrap();
+            
             gizmo_target.is_active = gizmo_result.is_some();
             gizmo_target.is_focused = is_focused;
 
+            // MODIFICATION 5: Apply result correctly for grouped gizmos
             if let Some((_, updated_targets)) = &gizmo_result {
-                let Some(result_transform) = updated_targets.get(i) else {
-                    bevy_log::warn!("No transform {i} found in GizmoResult!");
-                    continue;
-                };
+                if let Some(result_transform) = updated_targets.get(i) {
+                    let new_global_transform = GlobalTransform::from(Transform {
+                        translation: DVec3::from(result_transform.translation).as_vec3(),
+                        rotation: DQuat::from(result_transform.rotation).as_quat(),
+                        scale: DVec3::from(result_transform.scale).as_vec3(),
+                    });
 
-                target_transform.translation = DVec3::from(result_transform.translation).as_vec3();
-                target_transform.rotation = DQuat::from(result_transform.rotation).as_quat();
-                target_transform.scale = DVec3::from(result_transform.scale).as_vec3();
+                    // Convert back to local space if there is a parent
+                    if let Some(parent) = parent_opt {
+                        if let Ok(parent_global_transform) = q_parent_transforms.get(parent.get()) {
+                            *target_transform = new_global_transform.reparented_to(parent_global_transform);
+                        }
+                    } else {
+                        // No parent, global is local
+                        *target_transform = new_global_transform.into();
+                    }
+                }
             }
-
             gizmo_target.latest_result = gizmo_result.as_ref().map(|(result, _)| *result);
         }
     }
