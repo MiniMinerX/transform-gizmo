@@ -1,5 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
+use bevy_reflect::Reflect;
 pub use ecolor::Color32;
 
 use emath::Rect;
@@ -232,7 +233,7 @@ impl PreparedGizmoConfig {
 }
 
 /// Operation mode of a gizmo.
-#[derive(Debug, EnumSetType, Hash)]
+#[derive(Debug, EnumSetType, Hash, Reflect)]
 pub enum GizmoMode {
     /// Rotate around the view forward axis
     RotateView,
@@ -410,7 +411,7 @@ pub enum GizmoModeKind {
 }
 
 /// The point in space around which all rotations are centered.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Default, Reflect)]
 pub enum TransformPivotPoint {
     /// Pivot around the median point of targets
     #[default]
@@ -420,7 +421,7 @@ pub enum TransformPivotPoint {
 }
 
 /// Orientation of a gizmo.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Default, Reflect)]
 pub enum GizmoOrientation {
     /// Transformation axes are aligned to world space.
     #[default]
@@ -442,21 +443,26 @@ pub enum GizmoDirection {
 }
 
 /// Controls the visual style of the gizmo
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Reflect)]
 pub struct GizmoVisuals {
     /// Color of the x axis
+    #[reflect(ignore)]
     pub x_color: Color32,
     /// Color of the y axis
+    #[reflect(ignore)]
     pub y_color: Color32,
     /// Color of the z axis
+    #[reflect(ignore)]
     pub z_color: Color32,
     /// Color of the forward axis
+    #[reflect(ignore)]
     pub s_color: Color32,
     /// Alpha of the gizmo color when inactive
     pub inactive_alpha: f32,
     /// Alpha of the gizmo color when highlighted/active
     pub highlight_alpha: f32,
     /// Color to use for highlighted and active axes. By default, the axis color is used with `highlight_alpha`
+    #[reflect(ignore)]
     pub highlight_color: Option<Color32>,
     /// Width (thickness) of the gizmo strokes
     pub stroke_width: f32,

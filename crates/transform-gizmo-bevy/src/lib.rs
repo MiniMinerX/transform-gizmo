@@ -89,9 +89,11 @@ impl Plugin for TransformGizmoPlugin {
 }
 
 /// Various options for configuring the transform gizmos.
-#[derive(Resource, Copy, Clone, Debug)]
+#[derive(Resource, Copy, Clone, Debug, Reflect)]
+#[reflect(Resource)]
 pub struct GizmoOptions {
     /// Modes to use in the gizmos.
+    #[reflect(ignore)]
     pub gizmo_modes: EnumSet<GizmoMode>,
     /// Orientation of the gizmo. This affects the behaviour of transformations.
     pub gizmo_orientation: GizmoOrientation,
@@ -147,7 +149,7 @@ impl Default for GizmoOptions {
 }
 
 /// Hotkeys for easier interaction with the gizmo.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Reflect)]
 pub struct GizmoHotkeys {
     /// When pressed, transformations snap to according to snap values
     /// specified in [`GizmoOptions`].
