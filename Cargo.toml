@@ -16,11 +16,11 @@ transform-gizmo = { version = "0.6.0", path = "crates/transform-gizmo" }
 transform-gizmo-egui = { version = "0.6.0", path = "crates/transform-gizmo-egui" }
 transform-gizmo-bevy = { version = "0.6.0", path = "crates/transform-gizmo-bevy" }
 
-egui = "0.31"
-eframe = "0.31"
-emath = "0.31"
-epaint = "0.31"
-ecolor = "0.31"
+egui = "0.32"
+eframe = "0.32"
+emath = "0.32"
+epaint = "0.32"
+ecolor = "0.32"
 glam = { version = "0.30", features = ["mint"] }
 mint = "0.5"
 enum_dispatch = "0.3"
@@ -28,25 +28,28 @@ ahash = "0.8"
 enumset = "1.1"
 bytemuck = "1.22"
 uuid = "1.1"
-bevy = "0.16"
+bevy = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git" }
 
-bevy_app = { version = "0.16", default-features = false }
-bevy_core_pipeline = { version = "0.16", default-features = false }
-bevy_reflect = { version = "0.16", default-features = false }
-bevy_math = { version = "0.16", features = ["mint"], default-features = false }
-bevy_render = { version = "0.16", default-features = false }
-bevy_input = { version = "0.16", default-features = false }
-bevy_asset = { version = "0.16", default-features = false }
-bevy_utils = { version = "0.16", default-features = false }
-bevy_platform = { version = "0.16", default-features = false }
-bevy_pbr = { version = "0.16", default-features = false }
-bevy_ecs = { version = "0.16", default-features = false }
-bevy_log = { version = "0.16", default-features = false }
-bevy_window = { version = "0.16", default-features = false }
-bevy_transform = { version = "0.16", default-features = false }
-bevy_derive = { version = "0.16", default-features = false }
-bevy_image = { version = "0.16", default-features = false }
-bevy_picking = { version = "0.16", default-features = false }
+bevy_app = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_core_pipeline = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_reflect = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_math = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", features = ["mint"], default-features = false }
+bevy_render = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_input = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_asset = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_utils = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_platform = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_pbr = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_ecs = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_log = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_window = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_transform = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_derive = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_image = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_picking = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_camera = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_mesh = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
+bevy_shader = { version = "0.17.0-dev", git = "https://github.com/bevyengine/bevy.git", default-features = false }
 
 [profile.release]
 opt-level = "s"

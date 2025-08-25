@@ -10,7 +10,8 @@ pub struct GuiPlugin;
 impl Plugin for GuiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: false,
+            //enable_multipass_for_primary_context: false,
+            ..default()
         })
         .add_systems(Update, update_ui);
     }
@@ -21,7 +22,12 @@ fn update_ui(
     mut gizmo_options: ResMut<GizmoOptions>,
     gizmo_targets: Query<&GizmoTarget>,
 ) {
-    let options_panel = egui::SidePanel::left("options").show(contexts.ctx_mut(), |ui| {
+    let ctx = match contexts.ctx_mut() {
+        Ok(ctx) => ctx,
+        Err(_) => return,
+    };
+
+    let options_panel = egui::SidePanel::left("options").show(ctx, |ui| {
         draw_options(ui, &mut gizmo_options);
     });
 
@@ -32,7 +38,7 @@ fn update_ui(
             egui::Align2::LEFT_TOP,
             options_panel.response.rect.right_top().to_vec2(),
         )
-        .show(contexts.ctx_mut(), |ui| {
+        .show(ctx, |ui| {
             ui.allocate_ui(ui.ctx().available_rect().size(), |ui| {
                 let latest_gizmo_result = gizmo_targets
                     .iter()

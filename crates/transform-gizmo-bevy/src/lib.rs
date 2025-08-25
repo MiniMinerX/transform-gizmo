@@ -28,6 +28,7 @@
 //!
 //! You can either set it up with [`App::insert_resource`] when creating your App, or at any point in a system with [`ResMut<GizmoOptions>`].
 
+use bevy_camera::Camera;
 use bevy_app::prelude::*;
 use bevy_asset::{AssetApp, Assets};
 use bevy_ecs::prelude::*;
@@ -377,9 +378,9 @@ fn handle_hotkeys(
     }
 }
 
-#[derive(Debug, Event, Default)]
+#[derive(Debug, BufferedEvent, Default)]
 pub struct GizmoDragStarted;
-#[derive(Debug, Event, Default)]
+#[derive(Debug, BufferedEvent, Default)]
 pub struct GizmoDragging;
 
 #[allow(clippy::too_many_arguments)]
@@ -449,7 +450,7 @@ fn update_gizmos(
 
     let projection_matrix = camera.clip_from_view();
 
-    let view_matrix = camera_transform.compute_matrix().inverse();
+    let view_matrix = camera_transform.to_matrix().inverse();
 
     let mut snap_angle = gizmo_options.snap_angle;
     let mut snap_distance = gizmo_options.snap_distance;
@@ -536,7 +537,7 @@ fn update_gizmos(
                     });
 
                     if let Some(parent) = parent_opt {
-                        if let Ok(parent_global_transform) = q_parent_transforms.get(parent.get()) {
+                        if let Ok(parent_global_transform) = q_parent_transforms.get(parent.parent()) {
                             *target_transform = new_global_transform.reparented_to(parent_global_transform);
                         }
                     } else {
@@ -573,7 +574,7 @@ fn update_gizmos(
                     });
 
                     if let Some(parent) = parent_opt {
-                        if let Ok(parent_global_transform) = q_parent_transforms.get(parent.get()) {
+                        if let Ok(parent_global_transform) = q_parent_transforms.get(parent.parent()) {
                             *target_transform = new_global_transform.reparented_to(parent_global_transform);
                         }
                     } else {

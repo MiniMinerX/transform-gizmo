@@ -1,5 +1,5 @@
 use bevy::{
-    picking::pointer::{PointerInteraction, PointerPress},
+    picking::{pointer::{PointerInteraction, PointerPress}, PickingSettings},
     prelude::*,
 };
 use bevy_mod_outline::*;
@@ -25,7 +25,7 @@ impl Plugin for GizmoPickingPlugin {
 
 fn toggle_picking_enabled(
     gizmo_targets: Query<&GizmoTarget>,
-    mut picking_settings: ResMut<PickingPlugin>,
+    mut picking_settings: ResMut<PickingSettings>,
 ) {
     // Picking is disabled when any of the gizmos is focused or active.
 

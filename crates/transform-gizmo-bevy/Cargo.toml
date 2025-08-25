@@ -37,6 +37,9 @@ bevy_window.workspace = true
 bevy_transform.workspace = true
 bevy_derive.workspace = true
 bevy_image.workspace = true
+bevy_camera.workspace = true
+bevy_mesh.workspace = true
+bevy_shader.workspace = true
 bytemuck.workspace = true
 uuid.workspace = true
 
