@@ -74,8 +74,8 @@ impl Plugin for TransformGizmoPlugin {
         app.init_asset::<render::GizmoDrawData>()
             .init_resource::<GizmoOptions>()
             .init_resource::<GizmoStorage>()
-            .add_event::<GizmoDragStarted>()
-            .add_event::<GizmoDragging>()
+            .add_message::<GizmoDragStarted>()
+            .add_message::<GizmoDragging>()
             .add_plugins(TransformGizmoRenderPlugin)
             .add_systems(
                 Last,
@@ -378,9 +378,9 @@ fn handle_hotkeys(
     }
 }
 
-#[derive(Debug, BufferedEvent, Default)]
+#[derive(Debug, Message, Default)]
 pub struct GizmoDragStarted;
-#[derive(Debug, BufferedEvent, Default)]
+#[derive(Debug, Message, Default)]
 pub struct GizmoDragging;
 
 #[allow(clippy::too_many_arguments)]
@@ -389,8 +389,8 @@ fn update_gizmos(
     q_gizmo_camera: Query<(&Camera, &GlobalTransform), With<GizmoCamera>>,
     mut q_targets: Query<(Entity, &mut Transform, &GlobalTransform, &mut GizmoTarget, Option<&ChildOf>), Without<GizmoCamera>>,
     q_parent_transforms: Query<&GlobalTransform, With<Children>>,
-    mut drag_started: EventReader<GizmoDragStarted>,
-    mut dragging: EventReader<GizmoDragging>,
+    mut drag_started: MessageReader<GizmoDragStarted>,
+    mut dragging: MessageReader<GizmoDragging>,
     gizmo_options: Res<GizmoOptions>,
     mut gizmo_storage: ResMut<GizmoStorage>,
     mut last_cursor_pos: Local<Vec2>,
