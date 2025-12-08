@@ -14,11 +14,10 @@ transform-gizmo-bevy.workspace = true
 
 bevy.workspace = true
 #bevy_infinite_grid = "0.15"
-bevy_mod_outline = {git = "https://github.com/MiniMinerX/bevy_mod_outline.git", branch = "dev-0.17"}
+bevy_mod_outline = {git = "https://github.com/komadori/bevy_mod_outline.git", branch = "bevy-0.17"}
 
 [dependencies.bevy_egui]
-git = "https://github.com/MiniMinerX/bevy_egui"
-branch = "dev-0.17"
+version = "0.33"
 features = ["open_url", "default_fonts", "render"]
 default-features = false
 
