@@ -13,7 +13,7 @@ use bevy_image::BevyDefault as _;
 use bevy_pbr::{MeshPipeline, MeshPipelineKey, SetMeshViewBindGroup};
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_reflect::{Reflect, TypePath};
-use bevy_render::extract_component::ExtractComponent;
+use bevy_render::extract_component::{ExtractComponent, ExtractComponentPlugin};
 use bevy_render::mesh::PrimitiveTopology;
 use bevy_render::prelude::*;
 use bevy_render::render_asset::{
@@ -50,7 +50,8 @@ impl Plugin for TransformGizmoRenderPlugin {
 
         app.register_type::<DrawDataHandles>()
             .init_resource::<DrawDataHandles>()
-            .add_plugins(RenderAssetPlugin::<GizmoBuffers>::default());
+            .add_plugins(RenderAssetPlugin::<GizmoBuffers>::default())
+            .add_plugins(ExtractComponentPlugin::<GizmoCamera>::default());
 
         let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
             return;
@@ -335,7 +336,7 @@ fn queue_transform_gizmos(
             Has<MotionVectorPrepass>,
             Has<DeferredPrepass>,
         ),
-    )>,
+    ), With<GizmoCamera>>,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
 ) {
     let draw_function = draw_functions.read().get_id::<DrawGizmo>().unwrap();

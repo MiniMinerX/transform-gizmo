@@ -26,12 +26,20 @@ fn setup(
     ));
 
     // cube
-    commands.spawn((
+    let parent = commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
         MeshMaterial3d(materials.add(Color::from(LIME))),
         Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
         GizmoTarget::default(),
-    ));
+    )).id();
+
+    let child = commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
+        MeshMaterial3d(materials.add(Color::from(LIME))),
+        Transform::from_translation(Vec3::new(2.0, 0.0, 0.0)),
+    )).id();
+
+    commands.entity(parent).add_child(child);
 
     // light
     commands.spawn((
