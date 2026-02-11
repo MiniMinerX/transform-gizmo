@@ -36,7 +36,7 @@ use bevy_render::render_resource::{
 use bevy_render::renderer::RenderDevice;
 use bevy_render::sync_world::TemporaryRenderEntity;
 use bevy_render::view::{ExtractedView, ViewTarget};
-use bevy_render::{Extract, Render, RenderApp, RenderSet};
+use bevy_render::{Extract, Render, RenderApp, RenderSystems};
 use bevy_shader::Shader;
 use bytemuck::cast_slice;
 use uuid::Uuid;
@@ -66,7 +66,7 @@ impl Plugin for TransformGizmoRenderPlugin {
             .add_systems(
                 Render,
                 queue_transform_gizmos
-                    .in_set(RenderSet::Queue)
+                    .in_set(RenderSystems::Queue)
                     .after(prepare_assets::<GizmoBuffers>),
             );
     }
@@ -202,7 +202,7 @@ impl<P: PhaseItem> RenderCommand<P> for DrawTransformGizmo {
         };
 
         if gizmo.index_buffer.size() > 0 {
-            pass.set_index_buffer(gizmo.index_buffer.slice(..), 0, IndexFormat::Uint32);
+            pass.set_index_buffer(gizmo.index_buffer.slice(..),  IndexFormat::Uint32);
             pass.set_vertex_buffer(0, gizmo.position_buffer.slice(..));
             pass.set_vertex_buffer(1, gizmo.color_buffer.slice(..));
 
