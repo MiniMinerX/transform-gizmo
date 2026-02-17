@@ -1,6 +1,6 @@
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{load_internal_asset, uuid_handle, weak_handle, Asset, AssetId, Handle, RenderAssetUsages};
+use bevy_asset::{load_internal_asset, uuid_handle, Asset, AssetId, Handle, RenderAssetUsages};
 use bevy_camera::visibility::RenderLayers;
 use bevy_core_pipeline::core_3d::{CORE_3D_DEPTH_FORMAT, Transparent3d};
 use bevy_core_pipeline::prepass::{
@@ -13,7 +13,7 @@ use bevy_ecs::system::SystemParamItem;
 use bevy_ecs::system::lifetimeless::{Read, SRes};
 use bevy_image::BevyDefault as _;
 use bevy_mesh::{PrimitiveTopology, VertexBufferLayout};
-use bevy_pbr::{MeshPipeline, MeshPipelineKey, SetMeshViewBindGroup};
+use bevy_pbr::{ExtractedAtmosphere, MeshPipeline, MeshPipelineKey, SetMeshViewBindGroup};
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_reflect::{Reflect, TypePath};
 use bevy_render::extract_component::{ExtractComponent, ExtractComponentPlugin};
@@ -340,10 +340,13 @@ fn queue_transform_gizmos(
             Has<MotionVectorPrepass>,
             Has<DeferredPrepass>,
         ),
+        Has<ExtractedAtmosphere>,
     ), With<GizmoCamera>>,
     mut transparent_render_phases: ResMut<ViewSortedRenderPhases<Transparent3d>>,
 ) {
-    let draw_function = draw_functions.read().get_id::<DrawGizmo>().unwrap();
+    let Some(draw_function) = draw_functions.read().get_id::<DrawGizmo>() else {
+        return;
+    };
     let camera_msaa = msaa_q.single().ok().flatten();
     for (
         view_entity,
@@ -351,6 +354,7 @@ fn queue_transform_gizmos(
         entity_msaa,
         _render_layers,
         (normal_prepass, depth_prepass, motion_vector_prepass, deferred_prepass),
+        has_atmosphere,
     ) in &mut views
     {
         let Some(transparent_phase) = transparent_render_phases.get_mut(&view.retained_view_entity)
@@ -383,6 +387,10 @@ fn queue_transform_gizmos(
             view_key |= MeshPipelineKey::DEFERRED_PREPASS;
         }
 
+        if has_atmosphere {
+            view_key |= MeshPipelineKey::ATMOSPHERE;
+        }
+
         for (entity, handle) in &transform_gizmos {
             let Some(_) = transform_gizmo_assets.get(handle.0.id()) else {
                 continue;
@@ -404,7 +412,7 @@ fn queue_transform_gizmos(
                 distance: 0.,
                 batch_range: 0..1,
                 extra_index: PhaseItemExtraIndex::None,
-                indexed: false,
+                indexed: true,
             });
         }
     }
